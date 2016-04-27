@@ -1,0 +1,11 @@
+jdbc.his.driverClassName=oracle.jdbc.driver.OracleDriver
+jdbc.his.dialect=org.hibernate.dialect.Oracle10gDialect
+jdbc.his.url=jdbc:oracle:thin:@192.168.1.179:1521:orcl
+jdbc.his.username=scott
+jdbc.his.password=tiger
+
+jdbc.php.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+jdbc.php.dialect=org.hibernate.dialect.SQLServer2008Dialect
+jdbc.php.url=jdbc:sqlserver://192.168.1.111:1433;DatabaseName=qds11348150_db
+jdbc.php.username=sa
+jdbc.php.password=Admin123456789

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context-3.2.xsd
+			http://www.springframework.org/schema/aop 
+			http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+			http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+	<context:annotation-config />
+	<!-- 对web包中的所有类进行扫描,以完成Bean创建和自动依赖注入的功能 -->
+	<context:component-scan base-package="com.sxtj.mobilehis.usertest.*">
+	</context:component-scan>
+	
+	<aop:aspectj-autoproxy proxy-target-class="true"/>
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations" value="classpath:jdbc.properties" />
+	</bean>
+	
+<!-- His DataSource Configuration -->
+	<bean class="com.atomikos.jdbc.AtomikosDataSourceBean" 
+		init-method="init" destroy-method="close" id="dataSourceHis">
+		<!-- Set unique name for this DataSource --> 
+		<property name="uniqueResourceName"><value>${jdbc.his.dbname}</value></property>
+		<!-- Set XADatasource class name--> 
+		<property name="xaDataSourceClassName" value="${jdbc.his.datasource.classname}" />
+		<property name="xaProperties">
+			<props>
+				<prop key="user">${jdbc.his.username}</prop>
+				<prop key="password">${jdbc.his.password}</prop>
+				<prop key="URL">${jdbc.his.url}</prop>
+			</props>
+		</property>
+		<!-- set properties for datasource connection pool --> 
+		<property name="poolSize" value="${jdbc.his.minPoolSize}" />
+		<!-- 管理 Connection 被占用的时间 -->
+		<!-- 如果不设置这个值，Atomikos使用默认的300秒(即5分钟)，那么在处理大批量数据读取的时候，一旦超过5分钟，就会抛出类似 Resultset is close 的错误 -->
+		<property name="reapTimeout"><value>20000</value></property>
+	</bean>
+	
+<!-- Php DataSource Configuration -->
+	<bean class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		init-method="init" destroy-method="close" id="dataSourcePhp">
+		<property name="uniqueResourceName"><value>${jdbc.php.dbname}</value></property>
+		<!-- Set XADatasource class name--> 
+		<property name="xaDataSourceClassName" value="${jdbc.php.datasource.classname}" />
+		<property name="xaProperties">
+			<props>
+				<prop key="user">${jdbc.php.username}</prop>
+				<prop key="password">${jdbc.php.password}</prop>
+				<prop key="URL">${jdbc.php.url}</prop>
+			</props>
+		</property>
+		<!-- set properties for datasource connection pool --> 
+		<property name="poolSize" value="${jdbc.php.minPoolSize}" />
+		<!-- 管理 Connection 被占用的时间 -->
+		<!-- 如果不设置这个值，Atomikos使用默认的300秒(即5分钟)，那么在处理大批量数据读取的时候，一旦超过5分钟，就会抛出类似 Resultset is close 的错误 -->
+		<property name="reapTimeout"><value>20000</value></property> 
+	</bean>
+	
+	<bean id="sessionFactoryHis" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSourceHis" />
+		<property name="packagesToScan">
+			<list>
+				<value>com.sxtj.mobilehis.usertest.entity</value>
+			</list>
+		</property>
+<!--  
+		<property name="mappingResources">
+			<list>
+				<value>named-queries.hbm.xml</value>
+			</list>
+		</property>
+-->
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${jdbc.his.dialect}</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.current_session_context_class">jta</prop>
+				<!--<prop key="connection.autocommit">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">create</prop> -->
+			</props>
+		</property>
+		<property name="jtaTransactionManager">  
+			<ref bean="jtaTransactionManager" />
+		</property>
+	</bean>
+	
+	<bean id="sessionFactoryPhp" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSourcePhp" />
+		<property name="packagesToScan">
+			<list>
+				<value>com.sxtj.mobilehis.usertest.entity</value>
+			</list>
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${jdbc.php.dialect}</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.current_session_context_class">jta</prop>  
+				<!--<prop key="connection.autocommit">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">create</prop> -->
+			</props>
+		</property>
+		<property name="jtaTransactionManager">  
+			<ref bean="jtaTransactionManager" />  
+		</property>
+	</bean>
+	
+	<bean id="jdbcTemplateHis" class="org.springframework.jdbc.core.JdbcTemplate" >
+		<property name = "dataSource" ref="dataSourceHis"/> 
+	</bean>
+	
+	<bean id="jdbcTemplatePhp" class="org.springframework.jdbc.core.JdbcTemplate" >
+		<property name = "dataSource" ref="dataSourcePhp"/>
+	</bean>
+	
+	<bean id="atomikosTransactionManager" class="com.atomikos.icatch.jta.UserTransactionManager"
+		init-method="init" destroy-method="close">
+		<property name="forceShutdown" value="true"/>
+	</bean>
+	<bean id="atomikosUserTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+		<property name="transactionTimeout" value="300"/>
+	</bean>
+	<!-- JTA事务管理器 --> 
+	<bean id="jtaTransactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+		<property name="userTransaction" ref="atomikosUserTransaction" />
+		<property name="transactionManager" ref="atomikosTransactionManager" />
+		<property name="allowCustomIsolationLevels" value="true"/>
+	</bean>
+	
+	<aop:config>
+		<aop:pointcut id="bussinessService"
+			expression="execution(public * com.sxtj.mobilehis.usertest.service.*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="bussinessService" />
+	</aop:config>
+	<tx:advice id="txAdvice" transaction-manager="jtaTransactionManager">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED"/>
+			<tx:method name="edit*" propagation="REQUIRED"/>
+			<tx:method name="update*" propagation="REQUIRED"/>
+			<tx:method name="delete*" propagation="REQUIRED"/> 
+			<tx:method name="*" read-only="true" rollback-for="com.springTest.util.DaoException"/>
+		</tx:attributes>
+	</tx:advice>
+	
+</beans>

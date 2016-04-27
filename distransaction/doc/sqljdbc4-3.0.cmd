@@ -1,0 +1,1 @@
+mvn install:install-file -DgroupId=com.microsoft -DartifactId=sqlserver -Dversion=3.0 -Dpackaging=jar -Dfile=sqljdbc4-3.0.jar
